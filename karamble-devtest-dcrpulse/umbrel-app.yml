@@ -3,7 +3,7 @@ id: karamble-devtest-dcrpulse
 name: Decred Pulse
 tagline: Full Decred node and wallet with Lightning, DCRDEX, Bison Relay, and a block explorer
 category: crypto
-version: "2.0.0-rc7"
+version: "2.0.0-rc8"
 port: 8735
 icon: https://raw.githubusercontent.com/karamble/karambles-umbrel-devtest/master/karamble-devtest-dcrpulse/images/dcrpulse.svg
 description: |-
