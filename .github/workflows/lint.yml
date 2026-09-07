@@ -1,0 +1,83 @@
+name: Lint store
+
+# Validity checks only: the manifests are linted with the official App Store's
+# own tooling, and every pinned image is resolved against the registry. Nothing
+# is built or published here.
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint apps
+    runs-on: ubuntu-latest
+    env:
+      # getumbrel/umbrel-apps, pinned. The lint rules change often enough that a
+      # floating ref would turn this store red on someone else's commit; bump
+      # this deliberately.
+      UPSTREAM_REF: 8ede67033555d65f0f1b189d58b1c429525319b1
+    steps:
+      - name: Check out the store
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          path: store
+          persist-credentials: false
+
+      - name: Check out the official store's lint tooling
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          repository: getumbrel/umbrel-apps
+          ref: ${{ env.UPSTREAM_REF }}
+          path: upstream
+          persist-credentials: false
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: upstream/package-lock.json
+
+      - run: npm ci --ignore-scripts
+        working-directory: upstream
+
+      - name: Check the store manifest
+        working-directory: store
+        # The app linter walks app directories only and never reads this file.
+        run: |
+          test -f umbrel-app-store.yml || { echo "::error::umbrel-app-store.yml is missing"; exit 1; }
+          grep -qE '^id: *"?[a-z0-9-]+"? *$' umbrel-app-store.yml \
+            || { echo "::error file=umbrel-app-store.yml::id is missing or not a slug"; exit 1; }
+          grep -qE '^name: *"?.+"? *$' umbrel-app-store.yml \
+            || { echo "::error file=umbrel-app-store.yml::name is missing"; exit 1; }
+
+      - name: Merge this store into the official app set
+        # The port index is built from the apps in the root, so linting this
+        # store alone could never see the ports the official store claims. Our
+        # app is the official dcrpulse under another id: keeping both would
+        # report our own tile port as a conflict with ourselves.
+        run: |
+          set -eu
+          rm -rf upstream/dcrpulse
+          apps=""
+          for dir in store/*/; do
+            name=$(basename "$dir")
+            [ "$name" = ".github" ] && continue
+            rm -rf "upstream/$name"
+            cp -r "$dir" "upstream/$name"
+            apps="$apps $name"
+          done
+          test -n "$apps" || { echo "::error::no app directories found in the store"; exit 1; }
+          echo "APPS=$apps" >> "$GITHUB_ENV"
+
+      - name: Lint
+        working-directory: upstream
+        # --check-images resolves every pinned digest against the registry
+        # anonymously: it fails when a digest has been pruned away or no longer
+        # publishes both architectures. Warnings do not fail the run.
+        run: node .tools/lint-apps.mjs --root "$PWD" --check-images --format github $APPS
