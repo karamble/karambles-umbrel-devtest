@@ -1,42 +1,31 @@
 manifestVersion: 1
 id: karamble-devtest-dcrpulse
 name: Decred Pulse
-tagline: Full Decred node and wallet with Lightning, DCRDEX, Bison Relay, and a block explorer
+tagline: Full Decred node with watch-only wallet and database-free block explorer
 category: crypto
-version: "2.0.0-rc9"
+version: "1.0.3"
 port: 8735
 icon: https://raw.githubusercontent.com/karamble/karambles-umbrel-devtest/master/karamble-devtest-dcrpulse/images/dcrpulse.svg
 description: |-
-  Decred Pulse is a comprehensive self-hosted dashboard for the full Decred stack.
+  Decred Pulse is a comprehensive dashboard for running a full Decred node.
+
 
   It includes:
+    - Full dcrd blockchain node with transaction indexing
+    - dcrwallet with watch-only wallet support
+    - Block explorer with mempool and tspends monitoring
+    - Watch-Only Wallet management with xpub import support
 
-  - Full dcrd blockchain node with transaction indexing
 
-  - dcrwallet with full wallet support and multi-wallet management
+  Perfect for Decred node and wallet monitoring, exploring the blockchain, or monitoring Decred network activity.
 
-  - Staking (ticket purchase, VSP) and the privacy mixer
-
-  - Lightning Network (dcrlnd): channels and payments
-
-  - DCRDEX: decentralized exchange trading and market making
-
-  - Bison Relay: encrypted messaging, posts, and tipping
-
-  - Block explorer with mempool and treasury monitoring
-
-  Perfect for running, using, and monitoring a complete Decred node and wallet.
 
   Features:
-
-  - Full Decred node and wallet (multi-wallet)
-
-  - Lightning, DCRDEX, and Bison Relay
-
-  - Staking and privacy mixer
-
-  - Modern block explorer with mempool monitoring
-
+    - Full Decred node
+    - Wallet support
+    - Modern block explorer
+    - Mempool monitoring
+    - Watch-only wallet with xpub import
 developer: Decred
 website: https://decred.org
 submitter: karamble
@@ -47,154 +36,9 @@ gallery:
   - https://raw.githubusercontent.com/karamble/karambles-umbrel-devtest/master/karamble-devtest-dcrpulse/images/screenshot_2.jpg
   - https://raw.githubusercontent.com/karamble/karambles-umbrel-devtest/master/karamble-devtest-dcrpulse/images/screenshot_3.jpg
 dependencies: []
-releaseNotes: |-
-  v2.0.0 upgrades Decred Pulse from a watch-only node and block explorer to the full Decred stack.
-
-  Your existing node and wallet data are preserved and adopted automatically - no resync and no re-import. Your watch-only wallet becomes a full wallet.
-
-  New in this release: full wallet with multi-wallet management, staking, the privacy mixer, Lightning, DCRDEX, Bison Relay, and an optional Tor proxy that routes the whole stack through Tor. These features are idle until you set each one up, so your node and wallet keep working exactly as before until then.
-
-  After updating, the wallet starts locked - unlock it in the dashboard to resume balances and transactions. Resource use increases with the new services.
+releaseNotes: ""
 path: ""
 defaultUsername: ""
 defaultPassword: ""
 submission: https://github.com/getumbrel/umbrel-apps/pull/4121
-widgets:
-  - id: sync
-    type: text-with-progress
-    refresh: "10s"
-    endpoint: "widget:3000/widgets/sync"
-    link: ""
-    example:
-      type: text-with-progress
-      title: Blockchain
-      text: "1,091,139"
-      progressLabel: Synced
-      progress: 1
-  - id: node-stats
-    type: four-stats
-    refresh: "10s"
-    endpoint: "widget:3000/widgets/node-stats"
-    link: ""
-    example:
-      type: four-stats
-      items:
-        - { title: Peers, text: "8" }
-        - { title: Mempool, text: "25", subtext: txs }
-        - { title: Hashrate, text: "24.68 TH/s" }
-        - { title: Difficulty, text: "1.81M" }
-  - id: ticket-price
-    type: text-with-progress
-    refresh: "30s"
-    endpoint: "widget:3000/widgets/ticket-price"
-    link: ""
-    example:
-      type: text-with-progress
-      title: Ticket price
-      text: "280.76 DCR"
-      subtext: "Next ~280.76 DCR"
-      progressLabel: "93 blocks to next"
-      progress: 0.35
-  - id: ticket-pool
-    type: four-stats
-    refresh: "30s"
-    endpoint: "widget:3000/widgets/ticket-pool"
-    link: ""
-    example:
-      type: four-stats
-      items:
-        - { title: Pool size, text: "41,398", subtext: tickets }
-        - { title: Pool value, text: "11.16M", subtext: DCR }
-        - { title: Participation, text: "101.1%" }
-        - { title: In mempool, text: "10", subtext: tickets }
-  - id: staking
-    type: three-stats
-    refresh: "30s"
-    endpoint: "widget:3000/widgets/staking"
-    link: ""
-    example:
-      type: three-stats
-      items:
-        - { icon: ticket, text: "280.76", subtext: DCR price }
-        - { icon: stack-2, text: "41,398", subtext: pool }
-        - { icon: chart-pie, text: "101.1%", subtext: participation }
-  - id: price-gauges
-    type: two-stats-with-guage
-    refresh: "30s"
-    endpoint: "widget:3000/widgets/price-gauges"
-    link: ""
-    example:
-      type: two-stats-with-guage
-      items:
-        - { title: Ticket price, text: "280.76 DCR", progress: 0.35 }
-        - { title: Participation, text: "101.1%", progress: 1 }
-  - id: supply
-    type: four-stats
-    refresh: "60s"
-    endpoint: "widget:3000/widgets/supply"
-    link: ""
-    example:
-      type: four-stats
-      items:
-        - { title: Supply, text: "17.49M", subtext: DCR }
-        - { title: Block reward, text: "5.36", subtext: DCR }
-        - { title: Stake reward, text: "4.77", subtext: DCR }
-        - { title: Next reduction, text: "2,493", subtext: blocks }
-  - id: subsidy-countdown
-    type: text-with-progress
-    refresh: "60s"
-    endpoint: "widget:3000/widgets/subsidy-countdown"
-    link: ""
-    example:
-      type: text-with-progress
-      title: Next subsidy reduction
-      text: "2,493 blocks"
-      progressLabel: "59.4%"
-      progress: 0.594
-  - id: network
-    type: four-stats
-    refresh: "60s"
-    endpoint: "widget:3000/widgets/network"
-    link: ""
-    example:
-      type: four-stats
-      items:
-        - { title: Supply, text: "17.49M", subtext: DCR }
-        - { title: Treasury, text: "873.05k", subtext: DCR }
-        - { title: Hashrate, text: "24.68 TH/s" }
-        - { title: Difficulty, text: "1.81M" }
-  - id: votes
-    type: list
-    refresh: "5m"
-    endpoint: "widget:3000/widgets/votes"
-    link: ""
-    example:
-      type: list
-      noItemsText: No active consensus votes
-      items: []
-  - id: status
-    type: list-emoji
-    refresh: "30s"
-    endpoint: "widget:3000/widgets/status"
-    link: ""
-    example:
-      type: list-emoji
-      items:
-        - { emoji: "🧱", text: "Height 1,091,139" }
-        - { emoji: "🎫", text: "Pool 41,398" }
-        - { emoji: "💰", text: "280.76 DCR ticket" }
-        - { emoji: "🏦", text: "873.05k DCR treasury" }
-  - id: launch
-    type: text-with-buttons
-    refresh: "30s"
-    endpoint: "widget:3000/widgets/launch"
-    link: ""
-    example:
-      type: text-with-buttons
-      title: Decred Pulse
-      text: "Block 1,091,139"
-      subtext: Synced
-      buttons:
-        - { text: Explorer, link: /explorer }
-        - { text: Staking, link: /wallet/staking }
-        - { text: DEX, link: /dex }
+

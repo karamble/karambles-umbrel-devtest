@@ -4,28 +4,19 @@ services:
       APP_HOST: karamble-devtest-dcrpulse_dashboard_1
       APP_PORT: 8735
 
-  init:
-    image: alpine:3.22@sha256:310c62b5e7ca5b08167e4384c68db0fd2905dd9c7493756d356e893909057601
-    user: "0:0"
-    restart: "no"
-    command: ["sh", "-c", "mkdir -p /host/dashboard /host/dcrlnd /host/brclientd /host/dcrdex /host/tor && chown -R 1000:1000 /host/dashboard /host/dcrlnd /host/brclientd /host/dcrdex /host/tor"]
-    volumes:
-      - ${APP_DATA_DIR}:/host
-
   dcrd:
-    image: ghcr.io/karamble/dcrpulse-dcrd:latest@sha256:491a9378fc0825adbf21c267b752f3dd3d3be33aec9e922aa0507f1025794378
+    image: ghcr.io/karamble/dcrpulse-dcrd:2.1.3@sha256:d5c6c04af574d949db5b32181e3d8f223707e019c7745b45424634f3af6714a3
     user: "1000:1000"
     restart: on-failure
     stop_grace_period: 5m
     volumes:
       - ${APP_DATA_DIR}/data:/app-data
-      - ${APP_DATA_DIR}/tor:/app-data/tor:ro
     environment:
       DCRD_RPC_USER: ${APP_SEED}
       DCRD_RPC_PASS: ${APP_SEED}
       DCRD_EXTRA_ARGS: --txindex
-      TOR_PROXY_IP: tor
-      TOR_PROXY_PORT: 9050
+      TOR_PROXY_IP: ${TOR_PROXY_IP}
+      TOR_PROXY_PORT: ${TOR_PROXY_PORT}
     command: >
       --rpcuser=${APP_SEED}
       --rpcpass=${APP_SEED}
@@ -38,12 +29,9 @@ services:
       timeout: 10s
       retries: 5
       start_period: 120s
-    depends_on:
-      init:
-        condition: service_completed_successfully
 
   dcrwallet:
-    image: ghcr.io/karamble/dcrpulse-dcrwallet:latest@sha256:1a7d868f4fd0db03c03eb0c3955ceb9d7f106ef3a3fe24ce446a5cced634a9b7
+    image: ghcr.io/karamble/dcrpulse-dcrwallet:2.1.3@sha256:94caf7a6c57d49083dd73003f94e4dec804a85ed18c5413f489e4550ffb2f395
     user: "1000:1000"
     restart: on-failure
     stop_grace_period: 1m
@@ -56,8 +44,10 @@ services:
       DCRD_RPC_PASS: ${APP_SEED}
       DCRD_RPC_HOST: dcrd
       DCRWALLET_GAP_LIMIT: 400
-      TOR_PROXY_IP: tor
-      TOR_PROXY_PORT: 9050
+      TOR_PROXY_IP: ${TOR_PROXY_IP}
+      TOR_PROXY_PORT: ${TOR_PROXY_PORT}
+    command: >
+      --gaplimit=400
     depends_on:
       dcrd:
         condition: service_healthy
@@ -65,88 +55,17 @@ services:
       test: ["CMD", "sh", "-c", "nc -z 127.0.0.1 9110 && nc -z 127.0.0.1 9111 || exit 1"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 120s
-
-  dcrlnd:
-    image: ghcr.io/karamble/dcrpulse-dcrlnd:latest@sha256:3a0420c2be23a44d302b1e58ca3e62884e614dbd84cede0a4cc1de6950cebfd9
-    user: "1000:1000"
-    restart: on-failure
-    stop_grace_period: 1m
-    volumes:
-      - ${APP_DATA_DIR}/data:/app-data:ro
-      - ${APP_DATA_DIR}/dcrlnd:/app-data/dcrlnd
-    environment:
-      DCRWALLET_HOST: dcrwallet
-      DCRWALLET_GRPC_PORT: 9111
-      LN_TESTNET: "false"
-      TOR_PROXY_IP: tor
-      TOR_PROXY_PORT: 9050
-    depends_on:
-      init:
-        condition: service_completed_successfully
-      dcrwallet:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "sh", "-c", "nc -z 127.0.0.1 10009 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 300s
-
-  brclientd:
-    image: ghcr.io/karamble/dcrpulse-brclientd:latest@sha256:1b055286b0e639c5a9044bd1da1d9029e4c57c0c6048a69268654ede26ce89f0
-    user: "1000:1000"
-    restart: on-failure
-    stop_grace_period: 1m
-    environment:
-      TOR_PROXY_IP: tor
-      TOR_PROXY_PORT: 9050
-    volumes:
-      - ${APP_DATA_DIR}/data:/app-data:ro
-      - ${APP_DATA_DIR}/dcrlnd:/app-data/dcrlnd:ro
-      - ${APP_DATA_DIR}/brclientd:/app-data/brclientd
-    depends_on:
-      init:
-        condition: service_completed_successfully
-      dcrlnd:
-        condition: service_started
-
-  dcrdex:
-    image: ghcr.io/karamble/dcrpulse-dcrdex:latest@sha256:865520f968f4a32996b9abbffa277ed8c06760a83db00a073384d5edd3223b0b
-    hostname: dcrdex
-    user: "1000:1000"
-    restart: on-failure
-    stop_grace_period: 1m
-    environment:
-      DCRDEX_RPC_USER: ${APP_SEED}
-      DCRDEX_RPC_PASS: ${APP_SEED}
-      TOR_PROXY_IP: tor
-      TOR_PROXY_PORT: 9050
-    volumes:
-      - ${APP_DATA_DIR}/dcrdex:/dex/.dexc
-      - ${APP_DATA_DIR}/data:/app-data:ro
-    depends_on:
-      init:
-        condition: service_completed_successfully
+      retries: 3
+      start_period: 10s
 
   dashboard:
-    image: ghcr.io/karamble/dcrpulse-dashboard:latest@sha256:7b46bbfa1a00f839afe3626b4e7426799e1d862572cf99d14cd647e5bc4815b3
+    image: ghcr.io/karamble/dcrpulse-dashboard:1.0.3@sha256:d6d991150e570b3c473873f350a122f2cfc3ffd43e50b87e15821777c28d70dc
     user: "1000:1000"
     restart: on-failure
     volumes:
-      - ${APP_DATA_DIR}/data:/app-data
-      - ${APP_DATA_DIR}/dcrlnd:/app-data/dcrlnd
-      - ${APP_DATA_DIR}/brclientd:/app-data/brclientd:ro
-      - ${APP_DATA_DIR}/dcrdex:/app-data/dcrdex:ro
-      - ${APP_DATA_DIR}/dashboard:/dashboard-data
-      - ${APP_DATA_DIR}/tor:/app-data/tor:ro
+      - ${APP_DATA_DIR}/data:/app-data:ro
     environment:
       PORT: 8735
-      TOR_PROXY_IP: tor
-      TOR_PROXY_PORT: 9050
-      TOR_CONTROL_PORT: 9051
-      TRUSTED_PROXY: "true"
       DCRD_RPC_HOST: dcrd
       DCRD_RPC_PORT: 9109
       DCRD_RPC_USER: ${APP_SEED}
@@ -158,56 +77,8 @@ services:
       DCRWALLET_RPC_USER: ${APP_SEED}
       DCRWALLET_RPC_PASS: ${APP_SEED}
       DCRWALLET_RPC_CERT: /app-data/dcrd/rpc.cert
-      DCRLND_HOST: dcrlnd
-      DCRLND_GRPC_PORT: 10009
-      DCRLND_TLS_CERT: /app-data/dcrlnd/tls.cert
-      DCRLND_MACAROON: /app-data/dcrlnd/admin.macaroon
-      BRCLIENTD_HOST: brclientd
-      BRCLIENTD_PORT: 7676
-      BRCLIENTD_STATUS_PORT: 7677
-      BRCLIENTD_DATA_DIR: /app-data/brclientd
-      DCRDEX_RPC_HOST: dcrdex
-      DCRDEX_RPC_PORT: 5757
-      DCRDEX_RPC_USER: ${APP_SEED}
-      DCRDEX_RPC_PASS: ${APP_SEED}
-      DCRDEX_RPC_CERT: /app-data/dcrdex/rpc.cert
-      DCRDEX_WS_PORT: 5758
-      DCRDEX_WS_CERT: /app-data/dcrdex/web.cert
     depends_on:
-      init:
-        condition: service_completed_successfully
       dcrd:
         condition: service_healthy
       dcrwallet:
-        condition: service_healthy
-
-  tor:
-    image: ghcr.io/karamble/dcrpulse-tor:latest@sha256:e1de137b70460c5b0771521b7b900829757b5e8ae3544a5c93df55540e4c381d
-    user: "1000:1000"
-    restart: on-failure
-    environment:
-      HOME: /tmp
-    volumes:
-      - ${APP_DATA_DIR}/tor:/data
-    depends_on:
-      init:
-        condition: service_completed_successfully
-      dcrd:
-        condition: service_started
-
-  widget:
-    image: ghcr.io/karamble/dcrpulse-widgetumbrel:latest@sha256:b270190471bf13cad8adfd389fbd5acb611599998fba09f36e498152847bad8a
-    user: "1000:1000"
-    restart: on-failure
-    environment:
-      LISTEN: ":3000"
-      DCRD_RPC_HOST: dcrd
-      DCRD_RPC_PORT: 9109
-      DCRD_RPC_USER: ${APP_SEED}
-      DCRD_RPC_PASS: ${APP_SEED}
-      DCRD_RPC_CERT: /app-data/dcrd/rpc.cert
-    volumes:
-      - ${APP_DATA_DIR}/data:/app-data:ro
-    depends_on:
-      dcrd:
         condition: service_healthy
